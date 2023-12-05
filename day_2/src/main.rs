@@ -1,4 +1,24 @@
 use std::fs;
+use std::time::SystemTime;
+
+use clap::Parser;
+
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+struct Args {
+    /// Filename
+    #[arg(short, long, default_value_t = String::from("input.txt"))]
+    filename: String,
+
+    /// Whether or not to time the program execusion
+    #[arg(short, long, default_value_t = false)]
+    do_timing: bool,
+
+    /// How many loops to run when measuring timing
+    #[arg(long, default_value_t = 1000)]
+    times: usize
+}
+
 
 #[derive(Debug)]
 struct Game {
@@ -14,17 +34,29 @@ struct CubeSet {
 }
 
 fn main() {
-    let contents = fs::read_to_string("input.txt").unwrap();
+    let args: Args = Args::parse();
 
-    let games = contents.lines().filter_map(|line| parse_line(line));
+    let contents = fs::read_to_string(args.filename);
 
-    let sum: usize = games.clone().map(|game| check_valid_game(&game)).sum();
+    if let Ok(contents) = contents {
+        if args.do_timing {
+            let now = SystemTime::now();
+            for _ in 0..args.times {
+                let games = contents.lines().filter_map(|line| parse_line(line));
+                let _sum: usize = games.clone().map(|game| check_valid_game(&game)).sum();
+                let _power_sum: usize = games.map(|game| min_game_cubes(&game)).sum();                
+            }
+            let duration = (now.elapsed().unwrap().as_nanos() as f64 / args.times as f64) / 1e6;
+            println!("Total runtime: {:.4}ms (after {} loops)", duration, args.times);
+        } else {
+            let games = contents.lines().filter_map(|line| parse_line(line));
+            let sum: usize = games.clone().map(|game| check_valid_game(&game)).sum();
+            let power_sum: usize = games.map(|game| min_game_cubes(&game)).sum();
 
-    let power_sum: usize = games.map(|game| min_game_cubes(&game)).sum();
-
-    println!("The answer for part 1 is {}", sum);
-
-    println!("The answer for part 2 is {}", power_sum);
+            println!("The answer for part 1 is {}", sum);
+            println!("The answer for part 2 is {}", power_sum);
+        }
+    }
 }
 
 fn parse_line(line: &str) -> Option<Game> {
