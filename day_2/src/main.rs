@@ -36,7 +36,7 @@ struct CubeSet {
 fn main() {
     let args: Args = Args::parse();
 
-    let contents = fs::read_to_string(args.filename);
+    let contents = fs::read_to_string(&args.filename);
 
     if let Ok(contents) = contents {
         if args.do_timing {
@@ -56,6 +56,8 @@ fn main() {
             println!("The answer for part 1 is {}", sum);
             println!("The answer for part 2 is {}", power_sum);
         }
+    } else {
+        println!("Error opening file '{}'", &args.filename);
     }
 }
 
